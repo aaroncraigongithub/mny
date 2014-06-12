@@ -1,0 +1,37 @@
+h1 Listing transactions
+
+table
+  thead
+    tr
+      th User
+      th Account
+      th Transaction endpoint
+      th Transfer to
+      th Category
+      th Type
+      th Amount
+      th Transaction at
+      th Status
+      th
+      th
+      th
+
+  tbody
+    - @transactions.each do |transaction|
+      tr
+        td = transaction.user
+        td = transaction.account
+        td = transaction.transaction_endpoint
+        td = transaction.transfer_to
+        td = transaction.category
+        td = transaction.type
+        td = transaction.amount
+        td = transaction.transaction_at
+        td = transaction.status
+        td = link_to 'Show', transaction
+        td = link_to 'Edit', edit_transaction_path(transaction)
+        td = link_to 'Destroy', transaction, data: {:confirm => 'Are you sure?'}, :method => :delete
+
+br
+
+= link_to 'New Transaction', new_transaction_path

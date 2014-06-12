@@ -1,0 +1,27 @@
+p#notice = notice
+
+p
+  strong User:
+  = @scheduled_transaction.user
+p
+  strong Account:
+  = @scheduled_transaction.account
+p
+  strong Transfer to:
+  = @scheduled_transaction.transfer_to
+p
+  strong Transaction at:
+  = @scheduled_transaction.transaction_at
+p
+  strong Repeats:
+  = @scheduled_transaction.repeats
+p
+  strong Amount:
+  = @scheduled_transaction.amount
+p
+  strong Type:
+  = @scheduled_transaction.type
+
+= link_to 'Edit', edit_scheduled_transaction_path(@scheduled_transaction)
+'|
+= link_to 'Back', scheduled_transactions_path
