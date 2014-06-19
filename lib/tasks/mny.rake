@@ -9,7 +9,7 @@ namespace :mny do
     desc "Create a user account"
     task :new => :environment do
       email = ENV['MNY_EMAIL']
-      raise "You must supply MNY_EMAIL" if email.blank?
+      complain("You must supply MNY_EMAIL") and exit if email.blank?
 
       User.create! email: email, password: SecureRandom.hex(10)
     end
@@ -53,15 +53,22 @@ namespace :mny do
     task :list => :environment do
       with_env do |user, params|
         filters = {}
-        [:transacted_before, :transacted_after, :transfer_to, :transfer_from, :account, :category, :status, :amount, :type].each do |k|
+        [:transacted_before, :transacted_after, :from, :to, :transfer_to, :transfer_from, :account, :category, :status, :amount, :type].each do |k|
           next if params[k].nil?
 
           if [:transacted_before, :transacted_after].include?(k)
             filters[k] = safe_date(params[k])
           elsif [:transfer_from, :transfer_to, :account].include?(k)
             filters[k] = user.account(params[k])
+            complain("Can't find an account named #{ params[k] }") and exit if filters[k].nil?
+          elsif [:from, :to].include?(k)
+            endpoint = TransactionEndpoint.find_by_name(params[k])
+            complain("Can't find an endpoint #{ params[k] }") and exit if endpoint.nil?
+            filters[:transaction_endpoint] = [] if filters[:transaction_endpoint].nil?
+            filters[:transaction_endpoint]<< endpoint
           elsif k == :category
             filters[k] = user.categories.find_by_name(params[k])
+            complain("Can't find a category named #{ params[k] }") and exit if filters[k].nil?
           elsif k == :type
             filters[:transaction_type] = params[k]
           else
@@ -366,4 +373,9 @@ end
 # Display the given integer as a currency amount (@TODO use the currency of the transaction)
 def display_cents(cents)
   sprintf("$ %5.02f", cents.to_f / 100)
+end
+
+def complain(message)
+  Formatador.display_line("[red]#{ message }[/]")
+  true
 end

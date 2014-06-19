@@ -14,3 +14,7 @@ Clone the repo and adjust your server settings to make it available on your doma
 ### Database
 
 For security, `database.yml` is kept out of the repository, so you'll need to create your own.
+
+## Usage
+
+Until a web based front end is done, there is a fairly feature complete rake task suite that allows you to add and edit transactions, set up scheduled payments and forecast balances.  Parameters are passed through ENV variables, prefixed with MNY_.
