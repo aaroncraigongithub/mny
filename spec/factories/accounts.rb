@@ -5,6 +5,7 @@
 #  id         :integer          not null, primary key
 #  user_id    :integer
 #  name       :string(255)
+#  is_default :boolean
 #  created_at :datetime
 #  updated_at :datetime
 #

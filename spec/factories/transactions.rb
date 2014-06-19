@@ -31,14 +31,16 @@ FactoryGirl.define do
       transaction_type 'transfer_in'
 
       after(:create) do |t, e|
-        t.transfer_from = create(:account, user: t.user)
+        t.transferred_from = create(:account, user: t.user)
+        t.save!
       end
     end
     factory :transfer_out do
       transaction_type 'transfer_out'
 
       after(:create) do |t, e|
-        t.transfer_to = create(:account, user: t.user)
+        t.transferred_to = create(:account, user: t.user)
+        t.save!
       end
     end
 

@@ -15,10 +15,11 @@ class Account < ActiveRecord::Base
 
   belongs_to :user
   has_many :transactions
+  has_many :scheduled_transactions
 
   # Deposit money into this account.
   # Deposit data is a hash including
-  #   - from: (required) A TransactionEndpoint identifier (either an instance or a string corresponding to the label of the endpoint)
+  #   - from: (required) A TransactionEndpoint identifier (either an instance or a string corresponding to the name of the endpoint)
   #   - category: A string or Category instance.  If a string and a category does not exist, creates a new one
   #   - transaction_at: a DateTime (or parseable datetime string) indicating the date this deposit occured, defaults to Time.now
   #
@@ -30,7 +31,7 @@ class Account < ActiveRecord::Base
 
   # Withdraw money from this account.
   # Deposit data is a hash including
-  #   - to: (required) A TransactionEndpoint identifier (either an instance or a string corresponding to the label of the endpoint)
+  #   - to: (required) A TransactionEndpoint identifier (either an instance or a string corresponding to the name of the endpoint)
   #   - category: A string or Category instance.  If a string and a category does not exist, creates a new one
   #   - transaction_at: a DateTime (or parseable datetime string) indicating the date this deposit occured, defaults to Time.now
   #
@@ -49,6 +50,39 @@ class Account < ActiveRecord::Base
   #   `account.transfer(100, 'usd', other_params)
   def transfer(amount, *args)
     do_transaction :transfer_out, amount, *args
+  end
+
+  # Schedule a deposit at some point in the future, using the given options
+  #   - on:         This deposit will be made once on the given date
+  #   - schedule:   This deposit is recurring, following the rules in the given IceCube::Schedule
+  #  other parameters as defined in `deposit`
+  #
+  # You may optionally include a currency identifier, though the default currency will be used if this is omitted.  If included, it should be passed as the second parameteer, ie:
+  #   `account.will_deposit(100, 'usd', other_params)
+  def will_deposit(amount, *args)
+    do_scheduled_transaction :deposit, amount, *args
+  end
+
+  # Schedule a withdrawal at some point in the future, using the given options
+  #   - on:         This withdrawal will be made once on the given date
+  #   - schedule:   This withdrawal is recurring, following the rules in the given IceCube::Schedule
+  #  other parameters as defined in `withdraw`
+  #
+  # You may optionally include a currency identifier, though the default currency will be used if this is omitted.  If included, it should be passed as the second parameteer, ie:
+  #   `account.will_withdraw(100, 'usd', other_params)
+  def will_withdraw(amount, *args)
+    do_scheduled_transaction :withdrawal, amount, *args
+  end
+
+  # Schedule a transfer at some point in the future, using the given options
+  #   - on:         This transfer will be made once on the given date
+  #   - schedule:   This transfer is recurring, following the rules in the given IceCube::Schedule
+  #  other parameters as defined in `transfer`
+  #
+  # You may optionally include a currency identifier, though the default currency will be used if this is omitted.  If included, it should be passed as the second parameteer, ie:
+  #   `account.will_transfer(100, 'usd', other_params)
+  def will_transfer(amount, *args)
+    do_scheduled_transaction :transfer_out, amount, *args
   end
 
   # Get the balance for this account for a given date.  Defaults to today.
@@ -73,6 +107,30 @@ class Account < ActiveRecord::Base
   private
 
   def do_transaction(type, amount, *args)
+    t_data = transaction_data(type, amount, *args)
+    transactions.create! t_data
+    Account.find(t_data[:transfer_to]).transactions.create! transfer_data(t_data) if type == :transfer_out
+  end
+
+  def do_scheduled_transaction(type, amount, *args)
+    t_data = transaction_data(type, amount, *args)
+    t_data.delete :status # not used for schedule transactions
+
+    scheduled_transactions.create! t_data
+    Account.find(t_data[:transfer_to]).scheduled_transactions.create! transfer_data(t_data) if type == :transfer_out
+  end
+
+  def transfer_data(t_data)
+    incoming_t = t_data.clone
+    incoming_t.delete :transfer_to
+
+    incoming_t[:transfer_from] = id
+    incoming_t[:transaction_type] = :transfer_in
+
+    incoming_t
+  end
+
+  def transaction_data(type, amount, *args)
     currency    = Account.default_currency
     transaction = {}
 
@@ -95,6 +153,12 @@ class Account < ActiveRecord::Base
     t_data[:user_id]          = user.id
     t_data[:amount]           = amount
 
+    # scheduled transactions
+    unless t_data[:on].nil?
+      t_data[:transaction_at] = t_data[:on]
+      t_data.delete :on
+    end
+
     endpoint_key = {
       deposit:      :from,
       withdrawal:   :to,
@@ -114,7 +178,7 @@ class Account < ActiveRecord::Base
         raise "Could not find an account named '#{ t_data[endpoint_key] }" if a.nil?
         t_data[endpoint_id_key] = a.id
       else
-        te = user.transaction_endpoints.where(label: t_data[endpoint_key]).first || user.transaction_endpoints.create!(label: t_data[endpoint_key])
+        te = TransactionEndpoint.find_or_create_by!(user_id: user.id, name: t_data[endpoint_key])
         t_data[endpoint_id_key] = te.id
       end
     end
@@ -124,22 +188,12 @@ class Account < ActiveRecord::Base
       if t_data[:category].is_a? Category
         t_data[:category_id] = t_data[:category].id
       else
-        category = categories.where(name: t_data[:category]).first
+        category = Category.find_or_create_by!(user_id: user.id, name: t_data[:category])
         t_data[:category_id] = category.id unless category.nil?
       end
       t_data.delete :category
     end
 
-    if type == :transfer_out
-      incoming_t = t_data.clone
-      incoming_t.delete :transfer_to
-
-      incoming_t[:transfer_from] = id
-      incoming_t[:transaction_type] = :transfer_in
-
-      Account.find(t_data[:transfer_to]).transactions.create! incoming_t
-    end
-
-    transactions.create! t_data
+    t_data
   end
 end

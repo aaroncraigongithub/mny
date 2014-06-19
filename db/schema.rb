@@ -42,28 +42,34 @@ ActiveRecord::Schema.define(version: 20140608002605) do
   create_table "scheduled_transactions", force: true do |t|
     t.integer  "user_id"
     t.integer  "account_id"
+    t.integer  "transaction_endpoint_id"
     t.integer  "transfer_to"
-    t.datetime "transaction_at"
-    t.text     "repeats"
-    t.integer  "amount"
+    t.integer  "transfer_from"
+    t.integer  "category_id"
     t.integer  "transaction_type"
+    t.integer  "amount"
+    t.datetime "transaction_at"
+    t.text     "schedule"
+    t.string   "currency"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
   add_index "scheduled_transactions", ["account_id"], name: "index_scheduled_transactions_on_account_id", using: :btree
+  add_index "scheduled_transactions", ["category_id"], name: "index_scheduled_transactions_on_category_id", using: :btree
   add_index "scheduled_transactions", ["transaction_at"], name: "index_scheduled_transactions_on_transaction_at", using: :btree
+  add_index "scheduled_transactions", ["transaction_endpoint_id"], name: "index_scheduled_transactions_on_transaction_endpoint_id", using: :btree
   add_index "scheduled_transactions", ["transaction_type"], name: "index_scheduled_transactions_on_transaction_type", using: :btree
   add_index "scheduled_transactions", ["user_id"], name: "index_scheduled_transactions_on_user_id", using: :btree
 
   create_table "transaction_endpoints", force: true do |t|
     t.integer  "user_id"
-    t.string   "label"
+    t.string   "name"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
-  add_index "transaction_endpoints", ["label"], name: "index_transaction_endpoints_on_label", using: :btree
+  add_index "transaction_endpoints", ["name"], name: "index_transaction_endpoints_on_name", using: :btree
   add_index "transaction_endpoints", ["user_id"], name: "index_transaction_endpoints_on_user_id", using: :btree
 
   create_table "transactions", force: true do |t|

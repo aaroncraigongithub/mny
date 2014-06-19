@@ -78,11 +78,11 @@ RSpec.describe User, :type => :model do
       end
 
       it 'automatically creates a transaction_endpoint' do
-        label = Faker::Company.name
+        name = Faker::Company.name
 
-        t = user.deposit(amount, 'usd', from: label)
+        t = user.deposit(amount, 'usd', from: name)
         expect(t).to be_a_kind_of Transaction
-        expect(t.transaction_endpoint.label).to eq label
+        expect(t.transaction_endpoint.name).to eq name
       end
 
       it 'correctly sets the transaction type' do
@@ -134,11 +134,11 @@ RSpec.describe User, :type => :model do
       end
 
       it 'automatically creates a transaction_endpoint' do
-        label = Faker::Company.name
+        name = Faker::Company.name
 
-        t = user.withdraw(amount, 'usd', to: label)
+        t = user.withdraw(amount, 'usd', to: name)
         expect(t).to be_a_kind_of Transaction
-        expect(t.transaction_endpoint.label).to eq label
+        expect(t.transaction_endpoint.name).to eq name
       end
 
       it 'correctly sets the transaction type' do
@@ -237,6 +237,51 @@ RSpec.describe User, :type => :model do
 
         expect(other_account.balance).to eq pre + amount
       end
+    end
+  end
+
+  context "schedules" do
+    let(:user)      { create(:user_with_account) }
+    let(:amount)    { random_amount }
+    let(:endpoint)  { create(:transaction_endpoint, user: user) }
+    let(:schedule)  {
+      IceCube::Schedule.new do |s|
+        s.add_recurrence_rule(IceCube::Rule.monthly.day_of_month(15))
+      end
+    }
+
+    it 'schedules a one off deposit' do
+      user.will_deposit(amount, from: endpoint, on: Time.now + 10.days)
+      expect(user.scheduled_transactions.last.amount).to eq amount
+      expect(user.scheduled_transactions.last.deposit?).to be true
+    end
+
+    it 'schedules a recurring deposit'do
+      user.will_deposit(amount, from: endpoint, schedule: schedule)
+      expect(user.scheduled_transactions.last.schedule.to_yaml).to eq schedule.to_yaml
+    end
+
+    it 'schedules a one off withdrawal' do
+      user.will_withdraw(amount, to: endpoint, on: Time.now + 10.days)
+      expect(user.scheduled_transactions.last.amount).to eq amount
+      expect(user.scheduled_transactions.last.withdrawal?).to be true
+    end
+
+    it 'schedules a recurring withdrawal'do
+      user.will_withdraw(amount, to: endpoint, schedule: schedule)
+      expect(user.scheduled_transactions.last.schedule.to_yaml).to eq schedule.to_yaml
+    end
+
+    it 'schedules a one off transfer' do
+      account = create(:account, user: account)
+      user.will_transfer(amount, to: account, on: Time.now + 10.days)
+      expect(user.scheduled_transactions.last.amount).to eq amount
+    end
+
+    it 'schedules a recurring withdrawal'do
+      account = create(:account, user: account)
+      user.will_transfer(amount, to: account, schedule: schedule)
+      expect(user.scheduled_transactions.last.schedule.to_yaml).to eq schedule.to_yaml
     end
   end
 

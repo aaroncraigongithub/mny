@@ -223,6 +223,7 @@ DEPENDENCIES
   devise
   factory_girl_rails
   faker
+  formatador
   guard-rspec
   ice_cube
   jquery-rails

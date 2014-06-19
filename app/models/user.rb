@@ -25,11 +25,11 @@ class User < ActiveRecord::Base
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable, :confirmable
 
-  has_many :accounts
-  has_many :categories
-  has_many :transactions
-  has_many :scheduled_transactions
-  has_many :transaction_endpoints
+  has_many :accounts, dependent: :destroy
+  has_many :categories, dependent: :destroy
+  has_many :transactions, dependent: :destroy
+  has_many :scheduled_transactions, dependent: :destroy
+  has_many :transaction_endpoints, dependent: :destroy
 
   # Retrieve an account for this user.  By default, returns the default account.
   # The account identifier may also be a string corresponding to the name of the account you want to retrieve
@@ -72,12 +72,69 @@ class User < ActiveRecord::Base
     do_transaction :transfer, amount, *args
   end
 
+  # Schedule a deposit at some point in the future, using the given options
+  #   - on:         This deposit will be made once on the given date
+  #   - schedule:   This deposit is recurring, following the rules in the given IceCube::Schedule
+  #  other parameters as defined in `deposit`
+  #
+  # You may optionally include a currency identifier, though the default currency will be used if this is omitted.  If included, it should be passed as the second parameteer, ie:
+  #   `user.will_deposit(100, 'usd', other_params)
+  def will_deposit(amount, *args)
+    do_scheduled_transaction(:deposit, amount, *args)
+  end
+
+  # Schedule a withdrawal at some point in the future, using the given options
+  #   - on:         This withdrawal will be made once on the given date
+  #   - schedule:   This withdrawal is recurring, following the rules in the given IceCube::Schedule
+  #  other parameters as defined in `withdraw`
+  #
+  # You may optionally include a currency identifier, though the default currency will be used if this is omitted.  If included, it should be passed as the second parameteer, ie:
+  #   `user.will_withdraw(100, 'usd', other_params)
+  def will_withdraw(amount, *args)
+    do_scheduled_transaction(:withdraw, amount, *args)
+  end
+
+  # Schedule a transfer at some point in the future, using the given options
+  #   - on:         This transfer will be made once on the given date
+  #   - schedule:   This transfer is recurring, following the rules in the given IceCube::Schedule
+  #  other parameters as defined in `transfer`
+  #
+  # You may optionally include a currency identifier, though the default currency will be used if this is omitted.  If included, it should be passed as the second parameteer, ie:
+  #   `user.will_transfer(100, 'usd', other_params)
+  def will_transfer(amount, *args)
+    do_scheduled_transaction(:transfer, amount, *args)
+  end
+
+  # Iterates scheduled transactions set to be run on the given date
+  def each_scheduled(date)
+    scheduled_transactions.each do |t|
+      occurs = t.schedule.nil? ? t.transaction_at.to_date == date.to_date : t.schedule.occurs_on?(date)
+      yield(t) if occurs && block_given?
+    end
+  end
+
   # Returns the balance for this user for the given date.  The balance is calculated across all known accounts.
   def balance(date = Time.now)
-    accounts.collect { |account| account.balance(date) }.reduce(:+)
+    total = 0
+    accounts.each do |account|
+      total += account.balance(date)
+    end
+
+    total
   end
 
   alias :net_worth :balance
+
+  # Retrieve a transaction set for this user, using the passed filters.
+  def transaction_set(filters = {})
+    filters[:user_id] = id
+    Mny::TransactionSet.new(filters)
+  end
+
+  # Retrieve a forecast for this user for the given number of days (defaults to 30)
+  def forecast(days = nil)
+    Mny::Forecast.new(for: self, days: days)
+  end
 
   private
 
@@ -86,16 +143,29 @@ class User < ActiveRecord::Base
   end
 
   def do_transaction(type, amount, *args)
-    key = {
-      deposit:  :to,
-      withdraw: :from,
-      transfer: :from
-    }[type]
+    key = transaction_keys[type]
 
     account = account_from_args args, key
     raise "No matching account for this transaction" if account.nil?
 
     account.send type, amount, *args
+  end
+
+  def do_scheduled_transaction(type, amount, *args)
+    key = transaction_keys[type]
+
+    account = account_from_args args, key
+    raise "No matching account for this transaction" if account.nil?
+
+    account.send :"will_#{ type }", amount, *args
+  end
+
+  def transaction_keys
+    {
+      deposit:  :to,
+      withdraw: :from,
+      transfer: :from
+    }
   end
 
   # Get an account instance from method arguments passed to a method like deposit or withdraw.

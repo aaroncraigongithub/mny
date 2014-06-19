@@ -17,9 +17,14 @@
 #
 
 class Transaction < ActiveRecord::Base
+  include TransactionSource
+
+  validates :account, presence: true
+
   belongs_to :user
   belongs_to :account
-  belongs_to :transfered_to, class_name: 'Account', foreign_key: 'transfer_to'
+  belongs_to :transferred_to,        class_name: 'Account', foreign_key: 'transfer_to'
+  belongs_to :transferred_from,      class_name: 'Account', foreign_key: 'transfer_from'
   belongs_to :transaction_endpoint
   belongs_to :category
 
@@ -31,4 +36,5 @@ class Transaction < ActiveRecord::Base
     m = (deposit? or transfer_in?) ? 1 : -1
     amount * m
   end
+
 end

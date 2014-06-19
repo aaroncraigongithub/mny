@@ -12,6 +12,7 @@ gem 'devise'
 gem 'slim'
 gem 'slim-rails'
 gem 'ice_cube'
+gem 'formatador'
 
 group :development do
   gem 'capistrano-rails'

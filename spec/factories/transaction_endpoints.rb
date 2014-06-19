@@ -4,7 +4,7 @@
 #
 #  id         :integer          not null, primary key
 #  user_id    :integer
-#  label      :string(255)
+#  name       :string(255)
 #  created_at :datetime
 #  updated_at :datetime
 #
@@ -14,6 +14,6 @@
 FactoryGirl.define do
   factory :transaction_endpoint do
     user
-    label { Faker::Company.name }
+    name { Faker::Company.name }
   end
 end

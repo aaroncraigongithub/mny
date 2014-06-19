@@ -1,22 +1,13 @@
-# == Schema Information
-#
-# Table name: scheduled_transactions
-#
-#  id                :integer          not null, primary key
-#  user_id           :integer
-#  account_id        :integer
-#  transfer_to       :integer
-#  transaction_at    :datetime
-#  repeats           :text
-#  amount            :integer
-#  transaction_type  :string(255)
-#  created_at        :datetime
-#  updated_at        :datetime
-#
-
 class ScheduledTransaction < ActiveRecord::Base
+  include TransactionSource
+
   belongs_to :user
   belongs_to :account
+  belongs_to :transferred_to,        class_name: 'Account', foreign_key: 'transfer_to'
+  belongs_to :transferred_from,      class_name: 'Account', foreign_key: 'transfer_from'
+  belongs_to :transaction_endpoint
+  belongs_to :category
 
-  enum transaction_type: [:deposit, :withdrawal, :transfer]
+  enum transaction_type: [:deposit, :withdrawal, :transfer_out, :transfer_in]
+  serialize :schedule
 end
