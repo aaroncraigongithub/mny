@@ -1,0 +1,18 @@
+- unless local_assigns[:title].nil?
+  h3 = title
+
+.table-responsive
+  table.table.table-striped.table-bordered.table-condensed
+    - if headers
+      tr
+        - headers.each do |h|
+          th = h.upcase
+
+    - rows.each do |row|
+      tr
+        - if headers.blank?
+          - row.each do |cell|
+            td = cell
+        - else
+          - headers.each do |h|
+            td = row[h]

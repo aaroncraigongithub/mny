@@ -1,0 +1,17 @@
+nav#menu.navbar.navbar-default role='navigation'
+  .container-fluid
+    .navbar-header
+      button type='button' class='navbar-toggle' data-toggle='collapse' data-target='#main-menu'
+        span.sr-only Toggle navigation
+        span.icon-bar
+        span.icon-bar
+        span.icon-bar
+      a.navbar-brand href='#' Mny
+
+    #main-menu.collapse.navbar-collapse
+      ul.nav.navbar-nav
+        li = link_to "Accounts", accounts_path
+        li = link_to "Ledger", transactions_path
+        li = link_to "Forecast", forecast_path
+        li = link_to "Reports", reports_path
+        li = link_to("Logout", destroy_user_session_path, :method => :delete)

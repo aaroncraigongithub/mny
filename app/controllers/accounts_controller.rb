@@ -3,7 +3,8 @@ class AccountsController < ApplicationController
 
   # GET /accounts
   def index
-    @accounts = Account.all
+    @accounts = current_user.accounts
+    @account_summary = @accounts.collect{ |account| {account: account.name, balance: Mny.display_cents(account.balance)} }
   end
 
   # GET /accounts/1
@@ -21,7 +22,7 @@ class AccountsController < ApplicationController
 
   # POST /accounts
   def create
-    @account = Account.new(account_params)
+    @account = current_user.accounts.create(account_params)
 
     if @account.save
       redirect_to @account, notice: 'Account was successfully created.'

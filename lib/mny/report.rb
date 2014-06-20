@@ -149,8 +149,8 @@ class Mny::Report
         from:     t.from.name,
         to:       t.to.name,
         category: t.category.nil? ? 'Uncategorized' : t.category.name,
-        amount:   display_cents(t.amount),
-        balance:  display_cents(balance)
+        amount:   Mny.display_cents(t.amount),
+        balance:  Mny.display_cents(balance)
       }
 
       row[:status] = t.status || :unknown if t.is_a? Transaction
@@ -214,10 +214,5 @@ class Mny::Report
       last_date    = date
       last_balance = @balances[date]
     end
-  end
-
-  # Display the given integer as a currency amount (@TODO use the currency of the transaction)
-  def display_cents(cents)
-    sprintf("$ %5.02f", cents.to_f / 100)
   end
 end

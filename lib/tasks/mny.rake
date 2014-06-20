@@ -37,11 +37,11 @@ namespace :mny do
 
           accounts<< {
             name:     name,
-            balance:  display_cents(account.balance)
+            balance:  Mny.display_cents(account.balance)
           }
         end
 
-        accounts<< {name: "Net worth", balance: display_cents(user.net_worth)}
+        accounts<< {name: "Net worth", balance: Mny.display_cents(user.net_worth)}
         Formatador.display_table(colorize_data(accounts), [:name, :balance])
       end
     end
@@ -96,7 +96,7 @@ namespace :mny do
             to:       st.to.name,
             category: st.category.name,
             type:     st.transaction_type,
-            amount:   display_cents(st.amount),
+            amount:   Mny.display_cents(st.amount),
             starting: st.transaction_at.to_date
           }
         end
@@ -295,8 +295,8 @@ namespace :mny do
 
       Formatador.display_line("[magenta]Forecast to #{ forecast.end_date.to_date }[/]")
       summary_table = [
-        {snapshot: "Highest balance", balance: display_cents(forecast.high)},
-        {snapshot: "Lowest balance", balance: display_cents(forecast.low)},
+        {snapshot: "Highest balance", balance: Mny.display_cents(forecast.high)},
+        {snapshot: "Lowest balance", balance: Mny.display_cents(forecast.low)},
       ]
       Formatador.display_table(colorize_data(summary_table), [:snapshot, :balance])
 
@@ -304,7 +304,7 @@ namespace :mny do
       if negatives.count > 0
         Formatador.display_line("[red]Negative balance detected![/]")
 
-        n_data = negatives.sort.map { |date, balance| { date: date, balance: display_cents(balance) } }
+        n_data = negatives.sort.map { |date, balance| { date: date, balance: Mny.display_cents(balance) } }
         Formatador.display_table(colorize_data(n_data), [:date, :balance])
       end
     end
@@ -484,11 +484,6 @@ end
 def trueish(val)
   val ||= 'false'
   !(/^(true|yes|t|y|1)/.match(val.downcase).nil?)
-end
-
-# Display the given integer as a currency amount (@TODO use the currency of the transaction)
-def display_cents(cents)
-  sprintf("$ %5.02f", cents.to_f / 100)
 end
 
 def complain(message)

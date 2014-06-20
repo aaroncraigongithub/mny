@@ -1,14 +1,24 @@
 html
   head
     title Mny
-    = stylesheet_link_tag 'application', media: 'all', 'data-turbolinks-track'
-    = javascript_include_tag 'application', 'data-turbolinks-track'
+    = stylesheet_link_tag 'application', media: 'all', 'data-turbolinks-track' => true
+    = javascript_include_tag 'application', 'data-turbolinks-track' => true
     = csrf_meta_tags
+    meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
 
   body
-    .notice
-      = notice
-    .alert
-      = alert
+    .container
+      = render 'common/navbar'
 
-    = yield
+      - if notice
+        #notices.row
+          .col-xs-12
+            p.alert.alert-info = notice
+      - if alert
+        #alerts.row
+          .col-xs-12
+            p.alert.alert-danger = alert
+
+      #main.row
+        .col-xs-12
+          = yield
