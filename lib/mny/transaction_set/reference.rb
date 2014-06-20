@@ -13,9 +13,11 @@ class Mny::TransactionSet::Reference < Mny::TransactionSet
      ids = (@filters[@ref_key].class == Array) ? @filters[@ref_key].collect(&:id) : [@filters[@ref_key].id]
     end
 
-    @transactions = Transaction.where("#{ @foreign_key || @id_key } IN (?)", ids) unless ids.empty?
-
-    @filtered = true
+    unless ids.empty?
+      @transactions = Transaction.where("#{ @foreign_key || @id_key } IN (?)", ids)
+      @active       = true
+      @filtered     = true
+    end
   end
 
 end

@@ -53,11 +53,11 @@ namespace :mny do
     task :list => :environment do
       with_env do |user, params|
         filters = {}
-        [:transacted_before, :transacted_after, :from, :to, :transfer_to, :transfer_from, :account, :category, :status, :amount, :type].each do |k|
+        [:before, :after, :from, :to, :transfer_to, :transfer_from, :account, :category, :status, :amount, :type].each do |k|
           next if params[k].nil?
 
-          if [:transacted_before, :transacted_after].include?(k)
-            filters[k] = safe_date(params[k])
+          if [:before, :after].include?(k)
+            filters[:"transacted_#{ k }"] = safe_date(params[k])
           elsif [:transfer_from, :transfer_to, :account].include?(k)
             filters[k] = user.account(params[k])
             complain("Can't find an account named #{ params[k] }") and exit if filters[k].nil?
@@ -96,11 +96,12 @@ namespace :mny do
             to:       st.to.name,
             category: st.category.name,
             type:     st.transaction_type,
-            amount:   display_cents(st.amount)
+            amount:   display_cents(st.amount),
+            starting: st.transaction_at.to_date
           }
         end
 
-        Formatador.display_table(colorize_data(data), [:id, :account, :date, :from, :to, :category, :type, :amount])
+        Formatador.display_table(colorize_data(data), [:id, :account, :date, :starting, :from, :to, :category, :type, :amount])
       end
     end
 
@@ -108,7 +109,7 @@ namespace :mny do
     task :edit => :environment do
       with_env do |user, params|
         transaction                 = Transaction.find(params[:tid])
-        transaction.amount          = params[:amount] unless params[:amount] == 0
+        transaction.amount          = params[:amount] unless params[:amount].blank?
         transaction.category        = Category.find_or_create_by(user_id: user.id, name: params[:category]) unless params[:category].blank?
         transaction.transaction_at  = safe_date(params[:date]) unless params[:date].blank?
         transaction.status          = params[:status] unless params[:status].blank?
@@ -129,7 +130,7 @@ namespace :mny do
     task :edit_scheduled => :environment do
       with_env do |user, params|
         transaction                 = ScheduledTransaction.find(params[:tid])
-        transaction.amount          = params[:amount] unless params[:amount] == 0
+        transaction.amount          = params[:amount] unless params[:amount].blank?
         transaction.category        = Category.find_or_create_by(user_id: user.id, name: params[:category]) unless params[:category].blank?
         transaction.transaction_at  = safe_date(params[:date]) unless params[:date].blank?
         transaction.schedule        = params[:schedule] unless params[:schedule].blank?
@@ -143,6 +144,91 @@ namespace :mny do
     task :delete_scheduled => :environment do
       with_env do |user, params|
         ScheduledTransaction.destroy(params[:tid])
+      end
+    end
+  end
+
+  namespace :categories do
+    desc "List categories"
+    task :list => :environment do
+      with_env do |user, params|
+        table = []
+        user.categories.sort_by(&:name).each do |cat|
+          table<< {
+            id:   cat.id,
+            name: cat.name
+          }
+        end
+
+        Formatador.display_table(colorize_data(table), [:id, :name])
+      end
+    end
+
+    desc "Assign a category to some transactions"
+    task :assign => :environment do
+      with_env(:ids, :category) do |user, params|
+        category = user.categories.find_or_create_by(name: params[:category])
+        endpoint_ids = params[:ids].split(',') || []
+
+        transactions = []
+        endpoint_ids.each do |id|
+          e = user.transaction_endpoints.find(id)
+          transactions<< e.transactions
+        end
+
+        transactions.flatten!
+        progress = Formatador::ProgressBar.new(transactions.length)
+        transactions.each do |t|
+          t.category = category
+          t.save!
+
+          progress.increment
+        end
+      end
+    end
+  end
+
+  namespace :endpoints do
+    desc "List endpoints"
+    task :list => :environment do
+      with_env do |user, params|
+        table = []
+        user.transaction_endpoints.sort_by(&:name).each do |e|
+          table<< {
+            id:   e.id,
+            name: e.name
+          }
+        end
+
+        Formatador.display_table(colorize_data(table), [:id, :name])
+      end
+    end
+
+    desc "Join endpoints"
+    task :join => :environment do
+      with_env(:ids) do |user, params|
+        ids = params[:ids].split(',')
+
+        endpoint = user.transaction_endpoints.find(ids.shift)
+
+        ids.each do |id|
+          ep = user.transaction_endpoints.find(id)
+          ep.transactions.each do |t|
+            t.transaction_endpoint_id = endpoint.id
+            t.save!
+          end
+
+          ep.destroy
+        end
+      end
+    end
+
+    desc "Edit endpoint"
+    task :edit => :environment do
+      with_env(:id) do |user, params|
+        endpoint = user.transaction_endpoints.find(params[:id])
+        endpoint.name = params[:name]
+        endpoint.save!
       end
     end
   end
@@ -205,7 +291,7 @@ namespace :mny do
   task :forecast => :environment do
     with_env do |user, params|
       forecast = user.forecast(params[:days])
-      Formatador.display_table(colorize_data(forecast.report), [:id, :account, :date, :from, :to, :category, :type, :amount, :balance])
+      Formatador.display_table(colorize_data(forecast.report), [:account, :date, :from, :to, :category, :type, :amount, :balance])
 
       Formatador.display_line("[magenta]Forecast to #{ forecast.end_date.to_date }[/]")
       summary_table = [
@@ -223,18 +309,48 @@ namespace :mny do
       end
     end
   end
+
+  desc "Import a QIF file"
+  task :import => :environment do
+    with_env(:account, :file) do |user, params|
+      Formatador.display_line("Importing #{ params[:file] }")
+
+      transactions  = Mny::Qif.parse IO.read(params[:file])
+      progress      = Formatador::ProgressBar.new(transactions.count)
+
+      transactions.each do |t|
+        amount =  (t['amount'].to_f * 100).to_i
+        op     = amount < 0 ? :withdraw : :deposit
+
+        t_params = {
+          transaction_at: Date.strptime(t['date'],"%m/%d/%Y").to_time
+        }
+
+        if op == :withdraw
+          t_params[:to]   = t['endpoint']
+          t_params[:from] = params[:account]
+        else
+          t_params[:to]   = params[:account]
+          t_params[:from] = t['endpoint']
+        end
+
+        user.send(op, amount.abs, t_params)
+        progress.increment
+      end
+    end
+  end
 end
 
 def with_env(*args)
-  required = args.count > 0 ? (args[0].is_a?(Array) ? args[0] : [args[0]]) : []
+  required = args || []
 
   user = user_from_env
-  raise "Cannot find a user with '#{ ENV['MNY_USER'] }'" if user.nil?
+  complain("Cannot find a user with '#{ ENV['MNY_USER'] }'") and exit if user.nil?
 
   params = transaction_from_env
 
   required.each do |key|
-    raise "Missing #{ key }" if params[key].nil?
+    complain("Missing #{ key }") and exit if params[key].nil?
   end
 
   yield user, params

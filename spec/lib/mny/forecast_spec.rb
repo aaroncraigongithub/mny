@@ -105,14 +105,29 @@ describe Mny::Forecast do
     end
   end
 
-  it "increments from the current net worth" do
-    user    = create(:user_with_account)
-    endpoint = create(:transaction_endpoint, user: user)
+  context "specials" do
 
-    user.deposit(1000, from: endpoint)
-    user.will_withdraw(900, to: endpoint, on: Time.now + 1.days)
+    let(:user)      { create(:user_with_account) }
+    let(:endpoint)  { create(:transaction_endpoint, user: user) }
 
-    forecast = user.forecast(2.days)
-    expect(forecast.balance).to eq 100
+    it "increments from the current net worth" do
+      user.deposit(1000, from: endpoint)
+      user.will_withdraw(900, to: endpoint, on: Time.now + 1.days)
+
+      forecast = user.forecast(2)
+      expect(forecast.balance).to eq 100
+    end
+
+    it "doesn't count transactions until after their start date" do
+      user.deposit(1000, from: endpoint)
+      schedule = IceCube::Schedule.new do |s|
+        s.add_recurrence_rule IceCube::Rule.daily
+      end
+
+      user.will_withdraw(900, to: endpoint, schedule: schedule, transaction_at: Time.now + 10.days)
+
+      forecast = user.forecast(2)
+      expect(forecast.balance).to eq 1000
+    end
   end
 end

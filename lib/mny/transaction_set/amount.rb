@@ -10,6 +10,7 @@ class Mny::TransactionSet::Amount < Mny::TransactionSet
 
   def filter!
     return if @filtered or @filters[:amount].nil?
+    @active = true
 
     min = nil
     max = nil

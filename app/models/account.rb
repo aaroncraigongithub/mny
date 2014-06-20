@@ -108,16 +108,20 @@ class Account < ActiveRecord::Base
 
   def do_transaction(type, amount, *args)
     t_data = transaction_data(type, amount, *args)
-    transactions.create! t_data
+    transaction = transactions.create! t_data
     Account.find(t_data[:transfer_to]).transactions.create! transfer_data(t_data) if type == :transfer_out
+
+    transaction
   end
 
   def do_scheduled_transaction(type, amount, *args)
     t_data = transaction_data(type, amount, *args)
     t_data.delete :status # not used for schedule transactions
 
-    scheduled_transactions.create! t_data
+    transaction = scheduled_transactions.create! t_data
     Account.find(t_data[:transfer_to]).scheduled_transactions.create! transfer_data(t_data) if type == :transfer_out
+
+    transaction
   end
 
   def transfer_data(t_data)

@@ -13,6 +13,7 @@ gem 'slim'
 gem 'slim-rails'
 gem 'ice_cube'
 gem 'formatador'
+gem 'rs_quicken_parser'
 
 group :development do
   gem 'capistrano-rails'

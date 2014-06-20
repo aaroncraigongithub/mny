@@ -108,7 +108,7 @@ class User < ActiveRecord::Base
   # Iterates scheduled transactions set to be run on the given date
   def each_scheduled(date)
     scheduled_transactions.each do |t|
-      occurs = t.schedule.nil? ? t.transaction_at.to_date == date.to_date : t.schedule.occurs_on?(date)
+      occurs = t.schedule.nil? ? t.transaction_at.to_date == date.to_date : (t.transaction_at.to_date <= date.to_date && t.schedule.occurs_on?(date))
       yield(t) if occurs && block_given?
     end
   end

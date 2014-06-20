@@ -33,7 +33,7 @@ describe Mny::TransactionSet do
     ]
 
     (-5..5).each do |offset|
-      date = Time.now + offset.days
+      date = Time.now.getutc + offset.days
 
       # Balances:
       # -5: 5     (0+5)
@@ -106,7 +106,6 @@ describe Mny::TransactionSet do
       # 5:  odd:   cleared
 
       status = (offset == 0) ? :unknown : (switch == 1 ? :reconciled : :cleared)
-
       user.send(operation, amount, {category: category, transaction_at: date, to: to, from: from, status: status})
     end
 
@@ -121,7 +120,7 @@ describe Mny::TransactionSet do
   context 'API' do
 
     let(:user)              { User.first }
-    let(:ref_time)          { Time.now }
+    let(:ref_time)          { Time.now.getutc }
     let(:transaction_set)   { user.transaction_set }
     let(:before_set)        { user.transaction_set(transacted_before: ref_time) }
     let(:after_set)         { user.transaction_set(transacted_after: ref_time) }
@@ -185,6 +184,14 @@ describe Mny::TransactionSet do
             i += 1
           end
         end
+
+        it "calculates the amount in for a set" do
+          expect(transaction_set.amount_in).to eq 175
+        end
+
+        it "calculates the amount out for a set" do
+          expect(transaction_set.amount_out).to eq 115
+        end
       end
 
       context "totals" do
@@ -196,7 +203,7 @@ describe Mny::TransactionSet do
         end
 
         it "retrieves the balance at a specified date" do
-          t = Time.now - 3.days
+          t = Time.now.getutc - 3.days
           expect(account_set.balance(t)).to eq 25
         end
 
@@ -214,7 +221,7 @@ describe Mny::TransactionSet do
 
         it "reveals if the total is ever below zero" do
           expect(account_set.negative_balances.values.sort).to eq [-30, -20, -20, -10].sort
-          expect(account_set.negative_balances.keys.sort).to eq [(Time.now + 1.day).to_date, Time.now.to_date, (Time.now - 1.day).to_date, (Time.now - 2.days).to_date].sort
+          expect(account_set.negative_balances.keys.sort).to eq [(Time.now.getutc - 1.day).to_date, Time.now.getutc.to_date, (Time.now.getutc + 1.day).to_date, (Time.now.getutc + 2.days).to_date].sort
         end
       end
     end
@@ -339,6 +346,11 @@ describe Mny::TransactionSet do
         set.each do |transaction|
           expect(['cleared', 'reconciled']).to include(transaction.status)
         end
+      end
+
+      it "gets an empty set for unmatched but present filters" do
+        set = user.transaction_set(transacted_before: Time.now.getutc - 10.days)
+        expect(set.count).to eq 0
       end
     end
 

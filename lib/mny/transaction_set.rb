@@ -46,6 +46,7 @@ class Mny::TransactionSet
     @transactions           = nil
     @filtered               = false
     @reporter               = nil
+    @active                 = false
   end
 
   # Iterate through this set's transactions.
@@ -54,6 +55,12 @@ class Mny::TransactionSet
     @reporter.each do |t|
       yield t if block_given?
     end
+  end
+
+  # Returns true if there was a filter this set is interested in
+  def active
+    filter!
+    @active
   end
 
   # Return a count of the transactions in this set
@@ -151,6 +158,18 @@ class Mny::TransactionSet
     @reporter.report date
   end
 
+  # Returns the total amount incoming for this set of transactions
+  def amount_in(date = nil)
+    filter!
+    @reporter.amount_in date
+  end
+
+  # Returns the total amount outgoing for this set of transactions
+  def amount_out(date = nil)
+    filter!
+    @reporter.amount_out date
+  end
+
   private
 
   # Worker method for & and +
@@ -235,10 +254,10 @@ class Mny::TransactionSet
       klass = "Mny::TransactionSet::#{ filter_name.classify }".constantize
 
       set = klass.new @filters
-      if set.count > 0
+      if set.active
         their_transactions = set.instance_variable_get('@transactions')
 
-        if @transactions.nil? or @transactions.count == 0
+        if @transactions.nil?
           @transactions = their_transactions
         else
           @transactions.merge(their_transactions)

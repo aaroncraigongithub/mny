@@ -52,6 +52,8 @@ class Mny::Report
 
   # Returns the balance for this set on the given date.  Defaults to the final date in the set.
   def balance(date = nil)
+    return @starting_balance if @transactions.empty?
+
     update_balances
     date = end_date if date.nil?
 
@@ -59,6 +61,27 @@ class Mny::Report
     raise "Transaction set ends before this date" if date > end_date
 
     @balances[date.to_date]
+  end
+
+
+  # Returns the total amount incoming for this set of transactions
+  def amount_in(date = nil)
+    n = 0
+    @transactions.each do |t|
+      n += t.amount if t.adjusted_amount > 0
+    end
+
+    n
+  end
+
+  # Returns the total amount outgoing for this set of transactions
+  def amount_out(date = nil)
+    n = 0
+    @transactions.each do |t|
+      n += t.amount if t.adjusted_amount < 0
+    end
+
+    n
   end
 
   # Returns the difference between the highest balance and the lowest balance in this transaction set up to the given date.  Defaults to the last day in the set.

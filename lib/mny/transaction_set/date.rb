@@ -9,10 +9,14 @@
 class Mny::TransactionSet::Date < Mny::TransactionSet
 
   def filter!
+    return if @filtered
+
     after_date  = @filters[:transacted_after]
     before_date = @filters[:transacted_before]
 
+
     return if after_date.nil? && before_date.nil?
+    @active = true
 
     raise "Date filters must be instances of Time" unless before_date.nil? || before_date.class == Time
     raise "Date filters must be instances of Time" unless before_date.nil? || before_date.class == Time
@@ -21,6 +25,7 @@ class Mny::TransactionSet::Date < Mny::TransactionSet
     end_scope   = before_date ? "<= '#{ before_date.end_of_day }'" : "IS NOT NULL"
 
     @transactions = Transaction.where("transaction_at #{ start_scope } AND transaction_at #{ end_scope }")
+    @filtered = true
   end
 
 end
