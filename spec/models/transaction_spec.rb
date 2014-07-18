@@ -21,6 +21,27 @@ require 'mny_helper'
 
 RSpec.describe Transaction, :type => :model do
 
+  describe '.fingerprint' do
+    let(:transaction_at)    { Time.now }
+    let(:account_id)        { Faker::Number.number(3) }
+    let(:transaction_type)  { [:deposit, :withdrawal, :transfer].sample }
+    let(:amount)            { Faker::Number.number(6) }
+    let(:endpoint)          { Faker::Company.name }
+    let(:fp)  {
+      Transaction.fingerprint({
+        transaction_at:     transaction_at,
+        account_id:         account_id,
+        transaction_type:   transaction_type,
+        amount:             amount,
+        endpoint:           endpoint
+      })
+    }
+
+    it "generates a fingerprint" do
+      s =
+    end
+  end
+
   context 'adjusted amount' do
 
     let(:amount) { random_amount }

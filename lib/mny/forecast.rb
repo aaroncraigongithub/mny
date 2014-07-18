@@ -15,6 +15,7 @@ class Mny::Forecast
     @transactions = nil
     @reporter     = nil
     @end_date     = Time.now + days.days
+    @balance      = params[:start_balance] || @user.net_worth
   end
 
   # Returns the transaction date of the earliest transaction in the current set
@@ -123,6 +124,6 @@ class Mny::Forecast
       end
     end
 
-    @reporter = Mny::Report.new @transactions, starting_balance: @user.net_worth
+    @reporter = Mny::Report.new @transactions, starting_balance: @balance
   end
 end

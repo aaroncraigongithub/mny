@@ -16,6 +16,8 @@
 #  updated_at              :datetime
 #
 
+require 'digest'
+
 class Transaction < ActiveRecord::Base
   include TransactionSource
 
@@ -31,10 +33,40 @@ class Transaction < ActiveRecord::Base
   enum transaction_type: [:deposit, :withdrawal, :transfer_out, :transfer_in]
   enum status: [:unknown, :reconciled, :cleared]
 
-  # Returns the amount as a positive or negative integer according to the transaction type.
+  before_save :update_fingerprint
+
+  # Returns the amount as a positive or negative integer according to the
+  # transaction type.
   def adjusted_amount
     m = (deposit? or transfer_in?) ? 1 : -1
     amount * m
   end
 
+  # Create a fingerprint from the given data for a Transaction.
+  # `data` must include:
+  #   - transaction_at
+  #   - account_id
+  #   - transaction_type
+  #   - amount
+  #   - endpoint - a string which is the name of the transaction_endpoint
+  def self.fingerprint(data)
+    key = %i(
+      transaction_at
+      account_id
+      transaction_type
+      amount
+      endpoint
+    ).map { |f| data[f] }.join('')
+
+    # Digest::SHA256.new.digest key
+  end
+
+  private
+
+  # Generate a fingerprint for this transaction, based on the date,
+  # endpoint and amount.
+  def update_fingerprint
+    data = self.attributes.merge({endpoint: transaction_endpoint.name})
+    write_attribute(:fingerprint, Transaction.fingerprint(data))
+  end
 end

@@ -24,9 +24,16 @@ group :test, :development do
   gem 'spring'
   gem 'rspec-rails'
   gem 'guard-rspec'
-  gem 'factory_girl_rails'
   gem 'faker'
   gem "spring-commands-rspec"
+  gem 'cane'
+end
+
+group :test do
+  gem 'simplecov'
+  gem "timecop"
+  gem 'database_cleaner'
+  gem 'factory_girl_rails'
 end
 
 group :doc do

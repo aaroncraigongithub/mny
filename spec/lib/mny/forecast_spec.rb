@@ -81,7 +81,7 @@ describe Mny::Forecast do
     it "forecasts an arbitrary amount of days" do
       5.times do |i|
         offset = rand(100) + 1
-        expect(User.first.forecast(offset).end_date.to_date).to eq (Time.now + offset.days).to_date
+        expect(User.first.forecast(days: offset).end_date.to_date).to eq (Time.now + offset.days).to_date
       end
     end
 
@@ -114,7 +114,7 @@ describe Mny::Forecast do
       user.deposit(1000, from: endpoint)
       user.will_withdraw(900, to: endpoint, on: Time.now + 1.days)
 
-      forecast = user.forecast(2)
+      forecast = user.forecast(days: 2)
       expect(forecast.balance).to eq 100
     end
 
@@ -126,8 +126,16 @@ describe Mny::Forecast do
 
       user.will_withdraw(900, to: endpoint, schedule: schedule, transaction_at: Time.now + 10.days)
 
-      forecast = user.forecast(2)
+      forecast = user.forecast(days: 2)
       expect(forecast.balance).to eq 1000
+    end
+
+    it "forecasts with an arbitrary starting balance" do
+      user.deposit(1000, from: endpoint)
+      user.will_withdraw(900, to: endpoint, on: Time.now + 1.days)
+
+      forecast = user.forecast({days: 2, start_balance: 900})
+      expect(forecast.balance).to eq(0)
     end
   end
 end

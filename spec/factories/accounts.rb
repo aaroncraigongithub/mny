@@ -15,7 +15,7 @@
 FactoryGirl.define do
   factory :account do
     user
-    name { "Bank of #{ Faker::Address.city }" }
+    name { "Bank of #{ Faker::Address.city } #{ Faker::Company.suffix }" }
 
     factory :positive_account do
       after(:create) do |a, e|

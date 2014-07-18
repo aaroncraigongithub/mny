@@ -51,6 +51,7 @@ describe Mny::TransactionSet do
 
       amount = amounts[offset.abs] # 0 index seen once, everyone else seen twice
       operation = (offset == -2 or offset > 2) ? :withdraw : :deposit
+      # puts "#{ date } (#{ offset }): #{ operation } - #{ amount }"
 
       switch = (offset.abs % 2 == 0)? 1 : 2
 

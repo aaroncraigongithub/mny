@@ -11,7 +11,11 @@ namespace :mny do
       email = ENV['MNY_EMAIL']
       complain("You must supply MNY_EMAIL") and exit if email.blank?
 
-      User.create! email: email, password: SecureRandom.hex(10)
+      User.create!({
+        email:          email,
+        password:       SecureRandom.hex(10),
+        confirmed_at:   Date.today
+      })
     end
 
   end
@@ -43,6 +47,15 @@ namespace :mny do
 
         accounts<< {name: "Net worth", balance: Mny.display_cents(user.net_worth)}
         Formatador.display_table(colorize_data(accounts), [:name, :balance])
+      end
+    end
+
+    desc "Reset a user account, removing all transactions and endpoints"
+    task :reset => :environment do
+      with_env do |user, params|
+        user.transactions.delete_all
+        user.endpoints.delete_all
+        user.categories.delete_all
       end
     end
   end
@@ -236,7 +249,7 @@ namespace :mny do
   desc "Make a deposit"
   task :deposit => :environment do
     with_env(:amount) do |user, params|
-      user.deposit(params[:amount], to: params[:to], from: params[:from] || generice_source(user), category: params[:category], transaction_at: safe_date(params[:date]), status: params[:status])
+      user.deposit(params[:amount], to: params[:to], from: params[:from] || generic_source(user), category: params[:category], transaction_at: safe_date(params[:date]), status: params[:status])
     end
   end
 
@@ -257,7 +270,7 @@ namespace :mny do
   desc "Schedule a deposit"
   task :will_deposit => :environment do
     with_env(:amount) do |user, params|
-      t_params = { to: params[:to], from: params[:from] || generice_source(user), category: params[:category], transaction_at: safe_date(params[:date]), status: params[:status] }
+      t_params = { to: params[:to], from: params[:from] || generic_source(user), category: params[:category], transaction_at: safe_date(params[:date]), status: params[:status] }
       t_params[:on] = params[:on] unless params[:on].nil?
       t_params[:schedule] = params[:schedule] unless params[:schedule].nil?
 
@@ -290,7 +303,11 @@ namespace :mny do
   desc "Forecast for a given number of days"
   task :forecast => :environment do
     with_env do |user, params|
-      forecast = user.forecast(params[:days])
+      opts = {}
+      opts[:days] = params[:days].to_i if params[:days]
+      opts[:start_balance] = params[:balance].to_i if params[:balance]
+
+      forecast = user.forecast(opts)
       Formatador.display_table(colorize_data(forecast.report), [:account, :date, :from, :to, :category, :type, :amount, :balance])
 
       Formatador.display_line("[magenta]Forecast to #{ forecast.end_date.to_date }[/]")
@@ -312,7 +329,7 @@ namespace :mny do
 
   desc "Import a QIF file"
   task :import => :environment do
-    with_env(:account, :file) do |user, params|
+    with_env(:file) do |user, params|
       Formatador.display_line("Importing #{ params[:file] }")
 
       transactions  = Mny::Qif.parse IO.read(params[:file])

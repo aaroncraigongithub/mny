@@ -25,12 +25,38 @@
 
 FactoryGirl.define do
   factory :user do
-    email { Faker::Internet.email }
-    password "password"
+    email         { Faker::Internet.email }
+    password      { Faker::Internet.password(8) }
+    confirmed_at  { Date.today - 1.day }
 
     factory :user_with_account do
       after(:create) do |u, e|
-        create(:account, user: u)
+        create(:account, user: u, is_default: true)
+      end
+
+      factory :user_with_two_accounts do
+        after(:create) do |u, e|
+          create(:account, user: u, is_default: false)
+        end
+
+        factory :user_with_two_accounts_and_transactions do
+          after(:create) do |u, e|
+            10.times do |i|
+              d = Date.today - i.days
+              create(:deposit, transaction_at: d, user: u, account: u.account)
+            end
+
+            5.times do |i|
+              d = Date.today - i.days
+              create(:withdrawal, transaction_at: d, user: u, account: u.account)
+            end
+
+            3.times do |i|
+              d = Date.today - i.days
+              create(:deposit, transaction_at: d, user: u, account: u.accounts.last)
+            end
+          end
+        end
       end
     end
   end

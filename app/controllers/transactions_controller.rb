@@ -1,9 +1,11 @@
 class TransactionsController < ApplicationController
+  before_action :authenticate_user!
   before_action :set_transaction, only: [:show, :edit, :update, :destroy]
+  before_action :set_filters, only: [:index]
+  before_action :filter_transactions, only: [:index]
 
   # GET /transactions
   def index
-    @transactions = Transaction.all
   end
 
   # GET /transactions/1
@@ -46,9 +48,25 @@ class TransactionsController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
     def set_transaction
       @transaction = Transaction.find(params[:id])
+    end
+
+    def set_filters
+      @filters = params[:filters] || {}
+    end
+
+    def filter_transactions
+      filters = {}
+
+      after_date = @filters[:after].blank? ? Time.now.getutc - 30.days : Date.parse(@filters[:after]).to_time
+
+      filters[:transacted_after]    = after_date
+      filters[:transacted_before]   = Date.parse(@filters[:before]).to_time unless @filters[:before].blank?
+      filters[:account]             = current_user.account(@filters[:account] || :default)
+      filters[:transaction_type]    = @filters[:type].to_sym unless @filters[:type].blank?
+
+      @transaction_set = current_user.transaction_set(filters)
     end
 
     # Only allow a trusted parameter "white list" through.

@@ -132,8 +132,8 @@ class User < ActiveRecord::Base
   end
 
   # Retrieve a forecast for this user for the given number of days (defaults to 30)
-  def forecast(days = nil)
-    Mny::Forecast.new(for: self, days: days)
+  def forecast(opts = {})
+    Mny::Forecast.new opts.merge(for: self)
   end
 
   private

@@ -260,8 +260,9 @@ class Mny::TransactionSet
         if @transactions.nil?
           @transactions = their_transactions
         else
-          @transactions.merge(their_transactions)
+          @transactions = @transactions.merge(their_transactions)
         end
+
       end
     end
 
