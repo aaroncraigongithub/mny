@@ -34,6 +34,12 @@ FactoryGirl.define do
         create(:account, user: u, is_default: true)
       end
 
+      factory :user_with_a_balance do
+        after(:create) do |u, e|
+          create_list(:deposit, 10, user: u, account: u.account)
+        end
+      end
+
       factory :user_with_two_accounts do
         after(:create) do |u, e|
           create(:account, user: u, is_default: false)

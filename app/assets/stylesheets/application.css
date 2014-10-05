@@ -1,6 +1,8 @@
 /*
- * Only require mny.css.scss.  Everything else should be imported by SASS, to allow for sane import / override / variable inclusion behavior.
+ * Only require mny.css.scss.  Everything else should be imported by SASS, to
+ * allow for sane import / override / variable inclusion behavior.
  *
+ *= require recurring_select
  *= require mny
  */
 

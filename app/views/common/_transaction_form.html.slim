@@ -1,0 +1,98 @@
+#accordian.panel-group
+  .panel.panel-default
+    .panel-heading
+      h2.panel-title
+        a href="#transaction-type" data-toggle="collapse" data-parent='#accordian'
+          = transaction.is_a?(ScheduledTransaction) ? "I'm going to..." : "I..."
+    #transaction-type.panel-collapse.collapse.in
+      .panel-body
+        .radio
+          label
+            input type='radio' name='type' value='withdraw'
+            span = transaction.is_a?(ScheduledTransaction) ? 'withdraw' : 'withdrew'
+        .radio
+          label
+            input type='radio' name='type' value='deposit'
+            span = transaction.is_a?(ScheduledTransaction) ? 'deposit' : 'deposited'
+        .radio
+          label
+            input type='radio' name='type' value='transfer'
+            span = transaction.is_a?(ScheduledTransaction) ? 'transfer' : 'transferred'
+
+  .panel.panel-default
+    .panel-heading
+      h2.panel-title
+        a href="#transaction-amount" data-toggle="collapse" data-parent='#accordian'
+          | the amount of...
+    #transaction-amount.panel-collapse.collapse
+      .panel-body
+        .form-group
+          label
+            input#amount.form-control type='number' name='amount' placeholder='enter amount'
+            span.sr-only enter the amount of this transaction
+        button.btn.btn-primary.btn-sm type='button' next
+
+  .panel.panel-default
+    .panel-heading
+      h2.panel-title
+        a href="#source-account" data-toggle="collapse" data-parent='#accordian'
+          span.verb.verb-withdraw
+            em from
+          span.verb.verb-deposit
+            em to
+          span.verb.verb-transfer
+            em to
+          | &nbsp;this account...
+    #source-account.panel-collapse.collapse
+      .panel-body
+        - current_user.accounts.each do |account|
+          .radio
+            label
+              input type='radio' name='account' value='#{ account.id }' checked=account.default?
+              = account.name
+
+  .panel.panel-default
+    .panel-heading
+      h2.panel-title
+        a href="#transaction-endpoint" data-toggle="collapse" data-parent='#accordian'
+          span.verb.withdraw-verb to
+          span.verb.deposit-verb from
+          | ...
+    #transaction-endpoint.panel-collapse.collapse
+      .panel-body
+        .form-group
+          input#endpoint.form-control type='text' name='endpoint' placeholder='Type the name of the source or destination'
+
+  .panel.panel-default
+    .panel-heading
+      h2.panel-title
+        a href="#transaction-date" data-toggle="collapse" data-parent='#accordian'
+          | on this date.
+    #transaction-date.panel-collapse.collapse
+      .panel-body
+        .form-group
+          label.sr-only for='date' on this date.
+          input#date.form-control type='date' name='date' value='#{ Time.now.strftime("%Y-%m-%d") }'
+
+  .panel.panel-default
+    .panel-heading
+      h2.panel-title
+        a href="#transaction-category" data-toggle="collapse" data-parent='#accordian'
+          | Report this as a...
+    #transaction-category.panel-collapse.collapse
+      .panel-body
+        .form-group
+          input#category.form-control type='text' name='category' placeholder='type the category'
+
+  - transaction.is_a?(ScheduledTransaction)
+    .panel.panel-default
+      .panel-heading
+        h2.panel-title
+          a href="#transaction-schedule" data-toggle="collapse" data-parent='#accordian'
+            | and repeat this transaction every...
+      #transaction-schedule.panel-collapse.collapse
+        .panel-body
+          .form-group
+            = f.select_recurring :schedule, nil, {}, {class: 'form-control'}
+
+= f.submit "Schedule transaction", class: 'btn btn-primary'

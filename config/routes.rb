@@ -11,8 +11,9 @@ Rails.application.routes.draw do
 
   devise_for :users
 
-  get '/reports',   to: 'reports#index',    as: :reports
-  get '/forecast', to: 'forecast#index',  as: :forecast
+  get '/reports',   to: 'reports#index',      as: :reports
+  get '/forecast',  to: 'forecast#index',     as: :forecast
+  post '/forecast', to: 'forecast#forecast',  as: :do_forecast
 
   root to: "accounts#index"
 end

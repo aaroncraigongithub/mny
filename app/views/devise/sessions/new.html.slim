@@ -13,8 +13,8 @@ h2 Sign in
     .form-group
       label
         = f.check_box :remember_me
-        | Remember me
+        | &nbsp;Remember me
 
-  = f.submit "Sign in", class: 'btn btn-default'
+  = f.submit "Sign in", class: 'btn btn-primary'
 
 = render "devise/shared/links"

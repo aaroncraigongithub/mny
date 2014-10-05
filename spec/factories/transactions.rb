@@ -23,7 +23,7 @@ FactoryGirl.define do
     user
     account
 
-    amount          { (rand(100) + 1) * 100 }
+    amount          { rand(100..10000) }
     transaction_at  { Time.new - rand(5).days }
     status          'cleared'
 

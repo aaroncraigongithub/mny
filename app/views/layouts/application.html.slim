@@ -9,15 +9,7 @@ html
   body
     .container
       = render 'common/navbar'
-
-      - if notice
-        #notices.row
-          .col-xs-12
-            p.alert.alert-info = notice
-      - if alert
-        #alerts.row
-          .col-xs-12
-            p.alert.alert-danger = alert
+      = render 'common/messages'
 
       #main.row
         .col-xs-12

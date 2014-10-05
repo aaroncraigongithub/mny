@@ -1,24 +1,3 @@
-h1
-  | Forecast
-  small #{ @days } days
+h1 Forecast
 
-.row
-  .col-xs-12
-    = render partial: 'common/table', locals: {headers: [:account, :date, :from, :to, :category, :type, :amount, :balance], rows: @forecast.report}
-
-.row
-  .col-xs-12
-    h3
-      | Scheduled transactions
-      button.btn.btn-xs.btn-default type='button' data-toggle='collapse' data-target='#scheduled-transactions' toggle
-
-    #scheduled-transactions.row.collapse
-      .col-xs-12
-        .well
-          - if @scheduled.length == 0
-            p No transactions have been scheduled
-          - else
-            = render partial: 'common/table', locals: {headers: [:account, :date, :starting, :from, :to, :category, :type, :amount], rows: prep_scheduled_table(@scheduled)}
-
-          = link_to "New schedule", new_scheduled_transaction_path, class: 'btn btn-primary'
-
+= render partial: 'forecast_form'

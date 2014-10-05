@@ -1,0 +1,6 @@
+.row
+  .col-xs-12
+    h1 Schedule a transaction
+
+= form_for @scheduled_transaction, url: scheduled_transactions_path do |f|
+  = render partial: 'common/transaction_form', locals: {f: f, transaction: @scheduled_transaction}

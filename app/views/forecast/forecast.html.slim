@@ -1,0 +1,10 @@
+h1
+  | Forecast
+  small #{ @days } days
+
+= render partial: 'forecast_form'
+
+.row
+  .col-xs-12
+    = render partial: 'common/table', locals: {headers: [:account, :date, :from, :to, :category, :type, :amount, :balance], rows: @forecast.report}
+

@@ -1,0 +1,11 @@
+ruby:
+  messages = {}
+  messages[:info]   = notice if notice
+  messages[:danger] = alert if alert
+
+- messages.each do |c, m|
+  .row id='flash-#{ c }'
+    .col-xs-12
+      div class='alert alert-#{ c }'
+        button.close type='button' data-dismiss='alert' x
+        p = m

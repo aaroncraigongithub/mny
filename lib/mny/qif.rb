@@ -12,7 +12,6 @@ module Mny::Qif
         filter_transactions
       end
 
-      # puts @transactions.to_yaml
       @transactions
     end
 
@@ -41,7 +40,7 @@ module Mny::Qif
 
     # Filter out transactions that were imported in a previous session.
     # Previous transactions are considered the same if the date, endpoint and
-    # amount are the .
+    # amount are the same.
     def filter_transactions
       @transactions.delete_if do |t_data|
         fp = Transaction.fingerprint(t_data)

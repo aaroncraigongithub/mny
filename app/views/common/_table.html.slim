@@ -9,7 +9,13 @@
           th = h.upcase
 
     - rows.each do |row|
-      tr
+      / hack this in for now
+      ruby:
+        vals = headers.blank? ? row : row.values
+        row_cls = []
+        row_cls<< 'success' if vals.include?('deposit')
+        row_cls<< 'warning' if vals.include?('withdrawal')
+      tr class=row_cls.join(',')
         - if headers.blank?
           - row.each do |cell|
             td = cell

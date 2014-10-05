@@ -99,6 +99,11 @@ class Account < ActiveRecord::Base
     total
   end
 
+  # Returns true if this account is the default account.
+  def default?
+    is_default == true or user.accounts.count == 1
+  end
+
   # For future use
   def Account.default_currency
     'usd'

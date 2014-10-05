@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-describe TransactionsController, :type => :controller do
+describe TransactionsController do
 
   describe 'GET /' do
     context "default filters" do

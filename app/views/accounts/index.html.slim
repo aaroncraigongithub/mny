@@ -1,3 +1,12 @@
-h1 Accounts
+.row
+  .col-xs-10
+    h1
+      | Accounts
+  .col-xs-2
+    a.btn.btn-default href=new_account_path
+      = fa_icon 'plus', text: 'add account'
 
-= render partial: 'common/table', locals: {title: 'Accounts overview', headers: [:account, :balance], rows: @account_summary}
+.row
+  .col-xs-12
+    = render partial: 'common/table', locals: {title: 'Accounts overview', headers: [:account, :balance], rows: @account_summary}
+

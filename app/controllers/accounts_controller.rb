@@ -25,7 +25,7 @@ class AccountsController < ApplicationController
     @account = current_user.accounts.create(account_params)
 
     if @account.save
-      redirect_to @account, notice: 'Account was successfully created.'
+      redirect_to accounts_url, notice: 'Success!'
     else
       render :new
     end
@@ -34,7 +34,7 @@ class AccountsController < ApplicationController
   # PATCH/PUT /accounts/1
   def update
     if @account.update(account_params)
-      redirect_to @account, notice: 'Account was successfully updated.'
+      redirect_to accounts_url, notice: 'Updated!'
     else
       render :edit
     end
@@ -43,16 +43,15 @@ class AccountsController < ApplicationController
   # DELETE /accounts/1
   def destroy
     @account.destroy
-    redirect_to accounts_url, notice: 'Account was successfully destroyed.'
+    redirect_to accounts_url, notice: 'Deleted!'
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
+
     def set_account
       @account = Account.find(params[:id])
     end
 
-    # Only allow a trusted parameter "white list" through.
     def account_params
       params.require(:account).permit(:user_id, :name)
     end
